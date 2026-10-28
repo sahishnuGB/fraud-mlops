@@ -103,7 +103,14 @@ s3://$S3_BUCKET/
 The role can read `raw/`, read and write `dvcstore/` and `models/`, and do nothing else ([infra/iam-policy.json](infra/iam-policy.json)). Only `main` and pull requests of **your** repo can assume it ([infra/oidc-trust-policy.json](infra/oidc-trust-policy.json)).
 
 ```bash
-GITHUB_REPO=your-user/fraud-mlops   # owner/name
+GITHUB_REPO=your-user/fraud-mlops   # owner/name, exactly as GitHub shows it
+
+# Repos created after 15 July 2026 sign their OIDC tokens with immutable IDs
+# (repo:owner@<owner id>/repo@<repo id>:...), so the trust policy accepts both formats.
+# Create the GitHub repo (step 6a) first, then:
+GITHUB_REPO_IMMUTABLE=$(curl -s "https://api.github.com/repos/$GITHUB_REPO" | python -c \
+  "import sys,json; d=json.load(sys.stdin); o,r=d['full_name'].split('/'); print(f\"{o}@{d['owner']['id']}/{r}@{d['id']}\")")
+echo "$GITHUB_REPO_IMMUTABLE"         # e.g. your-user@12345678/fraud-mlops@987654321
 
 # One OIDC provider per account. Older CLI versions also require:
 #   --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
@@ -112,7 +119,8 @@ aws iam create-open-id-connect-provider \
   --client-id-list sts.amazonaws.com
 
 mkdir -p infra/.rendered   # filled-in copies of the policies (git-ignored)
-sed -e "s|<ACCOUNT_ID>|$ACCOUNT_ID|g" -e "s|<GITHUB_OWNER>/<REPO>|$GITHUB_REPO|g" \
+sed -e "s|<ACCOUNT_ID>|$ACCOUNT_ID|g" -e "s|<GITHUB_REPO_IMMUTABLE>|$GITHUB_REPO_IMMUTABLE|g" \
+    -e "s|<GITHUB_OWNER>/<REPO>|$GITHUB_REPO|g" \
   infra/oidc-trust-policy.json > infra/.rendered/trust.json
 sed -e "s|<BUCKET>|$S3_BUCKET|g" infra/iam-policy.json > infra/.rendered/policy.json
 
@@ -180,7 +188,8 @@ aws logs put-retention-policy --log-group-name /aws/lambda/fraud-mlops-api --ret
 
 # Fill in the placeholders of the remaining policies
 fill() { sed -e "s|<ACCOUNT_ID>|$ACCOUNT_ID|g" -e "s|<REGION>|$AWS_REGION|g" \
-             -e "s|<BUCKET>|$S3_BUCKET|g" -e "s|<GITHUB_OWNER>/<REPO>|$GITHUB_REPO|g" "$1"; }
+             -e "s|<BUCKET>|$S3_BUCKET|g" -e "s|<GITHUB_REPO_IMMUTABLE>|$GITHUB_REPO_IMMUTABLE|g" \
+             -e "s|<GITHUB_OWNER>/<REPO>|$GITHUB_REPO|g" "$1"; }
 fill infra/lambda-exec-policy.json   > infra/.rendered/lambda-exec.json
 fill infra/deploy-trust-policy.json  > infra/.rendered/deploy-trust.json
 fill infra/iam-deploy-policy.json    > infra/.rendered/deploy-policy.json

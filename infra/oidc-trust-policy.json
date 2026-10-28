@@ -14,6 +14,8 @@
         },
         "StringLike": {
           "token.actions.githubusercontent.com:sub": [
+            "repo:<GITHUB_REPO_IMMUTABLE>:ref:refs/heads/main",
+            "repo:<GITHUB_REPO_IMMUTABLE>:pull_request",
             "repo:<GITHUB_OWNER>/<REPO>:ref:refs/heads/main",
             "repo:<GITHUB_OWNER>/<REPO>:pull_request"
           ]
