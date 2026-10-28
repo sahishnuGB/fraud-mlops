@@ -1,0 +1,247 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python -m src.ingest
+    deps:
+    - path: src/ingest.py
+      hash: md5
+      md5: 2021eb1223435809ce877f2b58e2b8a0
+      size: 1121
+    - path: src/storage.py
+      hash: md5
+      md5: 53ca0a35c6632986f7017dbac5b6b5d5
+      size: 4556
+    params:
+      params.yaml:
+        batch: 2026-04
+        reference_batch: 2026-01
+    outs:
+    - path: data/raw/current
+      hash: md5
+      md5: feb364415c13aebc25fcae0fb029bfda.dir
+      size: 925399
+      nfiles: 1
+    - path: data/raw/reference
+      hash: md5
+      md5: d3990baa9bed796db1b9a315f01d2176.dir
+      size: 925693
+      nfiles: 1
+  validate:
+    cmd: python -m src.validate
+    deps:
+    - path: data/raw/current
+      hash: md5
+      md5: feb364415c13aebc25fcae0fb029bfda.dir
+      size: 925399
+      nfiles: 1
+    - path: data/raw/reference
+      hash: md5
+      md5: d3990baa9bed796db1b9a315f01d2176.dir
+      size: 925693
+      nfiles: 1
+    - path: src/schema.py
+      hash: md5
+      md5: 2b55eecee77911e0bf03ded3fb8478cb
+      size: 1377
+    - path: src/validate.py
+      hash: md5
+      md5: 468ef2619a10f2d2a2721bb0eb4938be
+      size: 2970
+    params:
+      params.yaml:
+        validation:
+          min_rows: 1000
+          fraud_rate_range:
+          - 0.001
+          - 0.2
+    outs:
+    - path: reports/validation.json
+      hash: md5
+      md5: baa852d5e5e855eb73e72e6316ee14aa
+      size: 225
+  split:
+    cmd: python -m src.split
+    deps:
+    - path: data/raw/current
+      hash: md5
+      md5: feb364415c13aebc25fcae0fb029bfda.dir
+      size: 925399
+      nfiles: 1
+    - path: reports/validation.json
+      hash: md5
+      md5: baa852d5e5e855eb73e72e6316ee14aa
+      size: 225
+    - path: src/split.py
+      hash: md5
+      md5: 2db51cec9064db6b2cc612707917f699
+      size: 1157
+    params:
+      params.yaml:
+        seed: 42
+        split:
+          test_size: 0.25
+    outs:
+    - path: data/split
+      hash: md5
+      md5: 5f25b1f63820e9e93c960fd1ca5bf01e.dir
+      size: 1039670
+      nfiles: 2
+  featurize:
+    cmd: python -m src.featurize
+    deps:
+    - path: data/split
+      hash: md5
+      md5: 5f25b1f63820e9e93c960fd1ca5bf01e.dir
+      size: 1039670
+      nfiles: 2
+    - path: src/featurize.py
+      hash: md5
+      md5: 6fe0f9e54b6ee256bcb1a843e4e16c83
+      size: 2017
+    - path: src/schema.py
+      hash: md5
+      md5: 2b55eecee77911e0bf03ded3fb8478cb
+      size: 1377
+    outs:
+    - path: data/features
+      hash: md5
+      md5: d4cb038cc9954311844e08872249c28f.dir
+      size: 1139290
+      nfiles: 2
+  train:
+    cmd: python -m src.train
+    deps:
+    - path: data/features/train.parquet
+      hash: md5
+      md5: 56a2b18222a2045b456f0738c3cca37b
+      size: 803685
+    - path: src/train.py
+      hash: md5
+      md5: ea8a531f6a3561222c1f0d2195390fc7
+      size: 3520
+    params:
+      params.yaml:
+        model:
+          type: hgb
+          hgb:
+            learning_rate: 0.05
+            max_iter: 400
+            max_leaf_nodes: 15
+            min_samples_leaf: 40
+            l2_regularization: 1.0
+            class_weight:
+            early_stopping: true
+          logreg:
+            C: 1.0
+            max_iter: 2000
+            class_weight: balanced
+        sampling: none
+        sampling_params:
+          ratio: 0.2
+          smote_k_neighbors: 5
+        seed: 42
+    outs:
+    - path: models/model.joblib
+      hash: md5
+      md5: 1755bcc7c262758642048e09d6355c2e
+      size: 228565
+  evaluate:
+    cmd: python -m src.evaluate
+    deps:
+    - path: data/features/test.parquet
+      hash: md5
+      md5: 733c27cd3b7916359647fde0e766fa94
+      size: 335605
+    - path: models/model.joblib
+      hash: md5
+      md5: 1755bcc7c262758642048e09d6355c2e
+      size: 228565
+    - path: src/evaluate.py
+      hash: md5
+      md5: 9a88d59834f458112e3afb62ada42a27
+      size: 3954
+    params:
+      params.yaml:
+        evaluate:
+          threshold: 0.5
+        min_pr_auc: 0.5
+    outs:
+    - path: reports/metrics.json
+      hash: md5
+      md5: 25c522a53157ca7a76ba559f9057f965
+      size: 398
+    - path: reports/plots/confusion_matrix.png
+      hash: md5
+      md5: 4095ec16aeddfbbad63e16bca5c26c4b
+      size: 12711
+    - path: reports/plots/pr_curve.png
+      hash: md5
+      md5: 1f1fa27889825030dac8144834b1110d
+      size: 26373
+  drift_check:
+    cmd: python -m src.drift_check
+    deps:
+    - path: data/raw/current
+      hash: md5
+      md5: feb364415c13aebc25fcae0fb029bfda.dir
+      size: 925399
+      nfiles: 1
+    - path: data/raw/reference
+      hash: md5
+      md5: d3990baa9bed796db1b9a315f01d2176.dir
+      size: 925693
+      nfiles: 1
+    - path: src/drift_check.py
+      hash: md5
+      md5: ddab7176d8b0122dbddfc1f3627968b3
+      size: 5391
+    - path: src/schema.py
+      hash: md5
+      md5: 2b55eecee77911e0bf03ded3fb8478cb
+      size: 1377
+    params:
+      params.yaml:
+        drift:
+          bins: 10
+        psi_threshold: 0.2
+    outs:
+    - path: reports/drift.json
+      hash: md5
+      md5: 84dc657c833285f671a87816980ce92b
+      size: 611
+    - path: reports/drift.md
+      hash: md5
+      md5: d3893b828f0861c77e35ed0a6c4290bd
+      size: 636
+    - path: reports/plots/drift_psi.png
+      hash: md5
+      md5: c0a6bd51f675edd152d581facbbd8987
+      size: 30912
+  promote:
+    cmd: python -m src.promote
+    deps:
+    - path: data/features/test.parquet
+      hash: md5
+      md5: 733c27cd3b7916359647fde0e766fa94
+      size: 335605
+    - path: reports/drift.json
+      hash: md5
+      md5: 84dc657c833285f671a87816980ce92b
+      size: 611
+    - path: reports/metrics.json
+      hash: md5
+      md5: 25c522a53157ca7a76ba559f9057f965
+      size: 398
+    - path: src/promote.py
+      hash: md5
+      md5: 9f08ec040adfd452d9b1122cf37c5910
+      size: 4063
+    params:
+      params.yaml:
+        promote:
+          min_improvement: 0.0
+    outs:
+    - path: reports/promotion.json
+      hash: md5
+      md5: d5c9a5f0eed4653dfd32613db07be7a7
+      size: 285

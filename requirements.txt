@@ -1,0 +1,6 @@
+# Runtime deps: lightweight on purpose (no xgboost / torch).
+# Versions verified locally with `dvc repro` + pytest.
+-r requirements-serve.txt
+pyarrow==25.0.1
+matplotlib==3.10.7
+dvc[s3]==3.67.1

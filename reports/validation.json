@@ -1,0 +1,14 @@
+{
+  "current": {
+    "errors": [],
+    "fraud_rate": 0.0202,
+    "passed": true,
+    "rows": 30000
+  },
+  "reference": {
+    "errors": [],
+    "fraud_rate": 0.020167,
+    "passed": true,
+    "rows": 30000
+  }
+}

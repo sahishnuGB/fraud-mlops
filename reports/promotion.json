@@ -1,0 +1,12 @@
+{
+  "batch": "2026-04",
+  "candidate_pr_auc": 0.598557,
+  "delta_pr_auc": null,
+  "drift_detected": false,
+  "prod_batch": null,
+  "prod_compared_on": null,
+  "prod_pr_auc": null,
+  "prod_pr_auc_at_publish": null,
+  "promote": true,
+  "reason": "no production model yet"
+}

@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Offline stand-in for the S3 bucket (data, DVC store, prod model)
+local_s3/
+
+# DVC-managed outputs (git only tracks dvc.lock; data lives in the DVC remote)
+/data/
+/models/
+/reports/plots/
+
+# MinIO data volume
+.minio/
+
+# Local env files
+.env
+*.env
+!minio.env.example
+
+# Logs
+*.log
+
+# Policies with placeholders filled in (SETUP.md)
+infra/.rendered/

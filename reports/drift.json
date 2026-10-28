@@ -1,0 +1,24 @@
+{
+  "batch": "2026-04",
+  "drift_detected": false,
+  "drifted_features": [],
+  "label_rate_current": 0.0202,
+  "label_rate_reference": 0.020167,
+  "max_psi": 0.001078,
+  "n_drifted": 0,
+  "psi": {
+    "account_age_days": 0.00034,
+    "amount": 0.000138,
+    "avg_amount_30d": 0.000264,
+    "card_present": 2.2e-05,
+    "customer_age": 0.000549,
+    "device_change": 3.6e-05,
+    "distance_from_home_km": 0.001078,
+    "hour": 0.000607,
+    "is_foreign": 3e-06,
+    "merchant_category": 0.000281,
+    "txn_count_24h": 0.00042
+  },
+  "psi_threshold": 0.2,
+  "reference_batch": "2026-01"
+}

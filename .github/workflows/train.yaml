@@ -1,0 +1,121 @@
+name: train
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "params.yaml"
+      - "dvc.yaml"
+      - "dvc.lock"
+      - "requirements.txt"
+      - ".github/workflows/train.yaml"
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "params.yaml"
+      - "dvc.yaml"
+      - "dvc.lock"
+      - "requirements.txt"
+      - ".github/workflows/train.yaml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write       # OIDC -> AWS, no long-lived keys
+  contents: read
+  pull-requests: write  # CML comment
+
+concurrency:
+  group: train-${{ github.ref }}
+  cancel-in-progress: false  # never interrupt a dvc push / publish halfway
+
+env:
+  S3_BUCKET: ${{ vars.S3_BUCKET }}
+  AWS_REGION: ${{ vars.AWS_REGION }}
+
+jobs:
+  train:
+    # Fork PRs get no OIDC token / secrets, so skip them.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # dvc metrics diff needs the base branch
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: train-${{ github.run_id }}
+
+      - name: Configure DVC remote
+        run: python -m src.configure_remote
+
+      - name: DVC pull
+        run: dvc pull --allow-missing || echo "::notice::nothing cached in the DVC remote yet"
+
+      - name: DVC repro
+        run: dvc repro
+
+      - name: DVC push
+        run: dvc push
+
+      - name: Build report
+        env:
+          BASE_REF: ${{ github.base_ref || 'main' }}
+        run: |
+          git fetch --no-tags origin "$BASE_REF" || true
+          {
+            echo "## Fraud model training report"
+            echo
+            python - <<'EOF'
+          import json
+          m = json.load(open("reports/metrics.json"))
+          p = json.load(open("reports/promotion.json"))
+          gate = "✅ passed" if m["gate_passed"] else "❌ FAILED"
+          print(f"**Batch** `{m['batch']}` · **model** `{m['model_type']}` · **sampling** `{m['sampling']}`\n")
+          print(f"**PR-AUC gate** (>= {m['min_pr_auc']}): {gate} — PR-AUC **{m['pr_auc']:.4f}**, ROC-AUC {m['roc_auc']:.4f}\n")
+          print(f"**Promotion**: {'🚀 promote' if p['promote'] else '⏸️ keep current prod'} — {p['reason']}\n")
+          EOF
+            echo "### Metrics vs \`origin/$BASE_REF\`"
+            dvc metrics diff "origin/$BASE_REF" --md --targets reports/metrics.json reports/promotion.json \
+              || echo "_no metrics on the base branch yet_"
+            echo
+            echo "### Params changed"
+            dvc params diff "origin/$BASE_REF" --md || true
+            echo
+            cat reports/drift.md
+            echo
+            echo "### Plots"
+            echo '![PR curve](./reports/plots/pr_curve.png) ![Confusion matrix](./reports/plots/confusion_matrix.png)'
+            echo '![Drift](./reports/plots/drift_psi.png)'
+          } > report.md
+          grep -v '^!\[' report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: iterative/setup-cml@v2
+        if: github.event_name == 'pull_request'
+
+      - name: CML PR comment
+        if: github.event_name == 'pull_request'
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: cml comment update --watermark-title="fraud-train" report.md
+
+      - name: PR-AUC gate
+        run: python -m src.check_gate
+
+      - name: Publish model to prod
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: python -m src.publish

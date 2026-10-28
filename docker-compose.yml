@@ -1,0 +1,40 @@
+# Local S3-compatible storage for free, realistic runs without an AWS account.
+#   docker compose up -d
+#   set -a; . ./minio.env; set +a       # copy minio.env.example first
+# S3 API: http://localhost:9000   Console: http://localhost:9001 (minioadmin / minioadmin)
+services:
+  minio:
+    build:
+      context: infra
+      dockerfile: minio.Dockerfile
+    image: fraud-mlops/minio:RELEASE.2025-10-15T17-29-55Z
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - ./.minio:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # One-shot job: create the bucket, then exit.
+  create-bucket:
+    image: amazon/aws-cli:2.31.9
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        aws --endpoint-url http://minio:9000 s3 mb s3://fraud-mlops 2>&1 | grep -v BucketAlreadyOwnedByYou;
+        echo 'bucket fraud-mlops ready'

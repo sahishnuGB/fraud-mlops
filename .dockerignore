@@ -1,0 +1,7 @@
+# Allowlist: the image only needs the code, the model and its metrics.
+*
+!requirements-serve.txt
+!src/
+!models/model.joblib
+!reports/metrics.json
+**/__pycache__

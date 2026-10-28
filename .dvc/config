@@ -1,0 +1,5 @@
+[core]
+    autostage = true
+    remote = local
+['remote "local"']
+    url = ../local_s3/dvcstore

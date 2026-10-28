@@ -1,0 +1,21 @@
+[project]
+name = "fraud-mlops"
+version = "0.1.0"
+description = "Credit card fraud detection with DVC, S3 and data drift monitoring"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]

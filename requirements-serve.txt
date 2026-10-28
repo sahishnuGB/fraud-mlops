@@ -1,0 +1,9 @@
+# Model runtime + API. Single source of truth for the libraries that pickle/unpickle
+# the model: requirements.txt includes this file, and the Docker image installs only this.
+scikit-learn==1.9.1
+imbalanced-learn==0.14.2
+pandas==2.3.0
+numpy==2.2.6
+pyyaml==6.0.3
+fastapi==0.162.0
+uvicorn==0.54.0

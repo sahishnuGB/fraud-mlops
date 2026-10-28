@@ -1,0 +1,4 @@
+# Keep DVC from walking large or irrelevant folders
+.venv/
+local_s3/
+.minio/

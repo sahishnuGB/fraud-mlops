@@ -1,0 +1,112 @@
+stages:
+  ingest:
+    # The bucket is outside DVC's view, so re-sync every run. If the files are
+    # unchanged their hashes match and every downstream stage is skipped.
+    cmd: python -m src.ingest
+    always_changed: true
+    deps:
+      - src/ingest.py
+      - src/storage.py
+    params:
+      - batch
+      - reference_batch
+    outs:
+      - data/raw/current
+      - data/raw/reference
+
+  validate:
+    cmd: python -m src.validate
+    deps:
+      - src/validate.py
+      - src/schema.py
+      - data/raw/current
+      - data/raw/reference
+    params:
+      - validation
+    metrics:
+      - reports/validation.json:
+          cache: false
+
+  split:
+    cmd: python -m src.split
+    deps:
+      - src/split.py
+      - data/raw/current
+      - reports/validation.json   # only split data that passed validation
+    params:
+      - seed
+      - split
+    outs:
+      - data/split
+
+  featurize:
+    cmd: python -m src.featurize
+    deps:
+      - src/featurize.py
+      - src/schema.py
+      - data/split
+    outs:
+      - data/features
+
+  train:
+    cmd: python -m src.train
+    deps:
+      - src/train.py
+      - data/features/train.parquet
+    params:
+      - seed
+      - sampling
+      - sampling_params
+      - model
+    outs:
+      - models/model.joblib
+
+  evaluate:
+    cmd: python -m src.evaluate
+    deps:
+      - src/evaluate.py
+      - models/model.joblib
+      - data/features/test.parquet
+    params:
+      - evaluate
+      - min_pr_auc
+    metrics:
+      - reports/metrics.json:
+          cache: false
+    plots:
+      - reports/plots/pr_curve.png
+      - reports/plots/confusion_matrix.png
+
+  drift_check:
+    cmd: python -m src.drift_check
+    deps:
+      - src/drift_check.py
+      - src/schema.py
+      - data/raw/current
+      - data/raw/reference
+    params:
+      - psi_threshold
+      - drift
+    metrics:
+      - reports/drift.json:
+          cache: false
+    outs:
+      - reports/drift.md:
+          cache: false
+    plots:
+      - reports/plots/drift_psi.png
+
+  promote:
+    # Production metrics live in the bucket and can change at any time.
+    cmd: python -m src.promote
+    always_changed: true
+    deps:
+      - src/promote.py
+      - reports/metrics.json
+      - data/features/test.parquet   # prod model is re-scored on the same test set
+      - reports/drift.json
+    params:
+      - promote
+    metrics:
+      - reports/promotion.json:
+          cache: false

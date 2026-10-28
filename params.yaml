@@ -1,0 +1,48 @@
+# Month to train on: s3://$S3_BUCKET/raw/batch=<batch>/ (bumped monthly by scheduled.yaml)
+batch: "2026-04"
+# Baseline month for drift monitoring (PSI)
+reference_batch: "2026-01"
+seed: 42
+
+validation:
+  min_rows: 1000
+  fraud_rate_range: [0.001, 0.2]
+
+split:
+  test_size: 0.25
+
+# Class imbalance strategy: none | undersample | smote
+sampling: none
+sampling_params:
+  ratio: 0.2              # minority/majority ratio after resampling
+  smote_k_neighbors: 5
+
+model:
+  type: hgb               # hgb (HistGradientBoosting) | logreg
+  hgb:
+    learning_rate: 0.05
+    max_iter: 400
+    max_leaf_nodes: 15
+    min_samples_leaf: 40
+    l2_regularization: 1.0
+    class_weight: null    # null | balanced
+    early_stopping: true
+  logreg:
+    C: 1.0
+    max_iter: 2000
+    class_weight: balanced
+
+evaluate:
+  threshold: 0.5
+
+# Quality gate: CI fails and the model is never promoted below this test PR-AUC
+min_pr_auc: 0.5
+
+# Drift: a feature with PSI >= psi_threshold counts as drifted
+psi_threshold: 0.2
+drift:
+  bins: 10
+
+promote:
+  # Candidate must reach prod PR-AUC + min_improvement to replace it
+  min_improvement: 0.0

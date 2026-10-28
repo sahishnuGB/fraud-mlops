@@ -1,0 +1,32 @@
+{
+  "transactions": [
+    {
+      "transaction_id": "demo-legit",
+      "timestamp": "2026-04-18T13:05:00",
+      "amount": 42.10,
+      "merchant_category": "grocery",
+      "card_present": true,
+      "is_foreign": false,
+      "distance_from_home_km": 3.2,
+      "customer_age": 45,
+      "account_age_days": 2100,
+      "txn_count_24h": 2,
+      "avg_amount_30d": 48.0,
+      "device_change": false
+    },
+    {
+      "transaction_id": "demo-suspicious",
+      "timestamp": "2026-04-18T02:41:00",
+      "amount": 1249.99,
+      "merchant_category": "electronics",
+      "card_present": false,
+      "is_foreign": false,
+      "distance_from_home_km": 412.5,
+      "customer_age": 27,
+      "account_age_days": 21,
+      "txn_count_24h": 7,
+      "avg_amount_30d": 85.4,
+      "device_change": true
+    }
+  ]
+}

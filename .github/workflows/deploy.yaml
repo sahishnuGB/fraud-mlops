@@ -1,0 +1,96 @@
+name: deploy
+
+# Ships the *production* model from the registry (s3://$S3_BUCKET/models/prod/) to AWS Lambda.
+# Runs after a successful train run on main (which may have promoted a new model), when the
+# serving code changes, or by hand. Unpromoted candidates never reach the endpoint.
+on:
+  workflow_run:
+    workflows: [train]
+    types: [completed]
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "src/serve.py"
+      - "src/featurize.py"
+      - "src/schema.py"
+      - "Dockerfile"
+      - "requirements-serve.txt"
+      - ".github/workflows/deploy.yaml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  S3_BUCKET: ${{ vars.S3_BUCKET }}
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: fraud-mlops-api
+  LAMBDA_FUNCTION: fraud-mlops-api
+
+jobs:
+  deploy:
+    # Skip until the deploy role is configured, and after failed train runs.
+    if: >-
+      vars.AWS_DEPLOY_ROLE_ARN != '' &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The deploy role trusts only this environment (see infra/deploy-trust-policy.json),
+    # and GitHub shows the live URL on the repo's Deployments page.
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}docs
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install pyyaml==6.0.3  # the deploy scripts only need the stdlib, PyYAML and the AWS CLI
+
+      - name: AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: deploy-${{ github.run_id }}
+
+      - name: Fetch production model
+        id: prod
+        run: python -m src.fetch_prod
+
+      - name: Log in to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.prod.outputs.batch }}-${{ github.sha }}
+          # Lambda rejects image indexes, which provenance/SBOM attestations create.
+          provenance: false
+          sbom: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to Lambda + smoke test
+        id: deploy
+        env:
+          LAMBDA_ROLE_ARN: ${{ vars.LAMBDA_ROLE_ARN }}
+        run: >-
+          python -m src.deploy_lambda
+          --image-uri "${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}@${{ steps.image.outputs.digest }}"

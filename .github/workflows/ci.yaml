@@ -1,0 +1,79 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install
+        run: pip install -r requirements-dev.txt
+
+      - name: Ruff
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Pytest
+        run: pytest
+
+  # Builds the API image and smoke-tests it. Nothing is pushed or deployed.
+  docker:
+    needs: lint-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Train a model offline (S3_BUCKET unset -> local_s3/ fallback)
+        run: |
+          python -m src.generate_data --batch 2026-01 2026-04
+          dvc repro
+
+      - name: Build image
+        run: docker build -t fraud-mlops:ci .
+
+      - name: Smoke test
+        run: |
+          docker run -d --name api -p 8000:8000 fraud-mlops:ci
+          for i in $(seq 1 30); do curl -fs localhost:8000/health && break; sleep 1; done
+          curl -fs -X POST localhost:8000/predict -H "Content-Type: application/json" \
+            -d @examples/predict_request.json | tee predictions.json
+          python - <<'EOF'
+          import json
+          p = {x["transaction_id"]: x for x in json.load(open("predictions.json"))["predictions"]}
+          assert p["demo-suspicious"]["fraud_probability"] > p["demo-legit"]["fraud_probability"], p
+          print("\nsmoke test passed")
+          EOF
+
+      - name: Container logs
+        if: failure()
+        run: docker logs api || true

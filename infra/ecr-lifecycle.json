@@ -1,0 +1,14 @@
+{
+  "rules": [
+    {
+      "rulePriority": 1,
+      "description": "Keep only the 3 most recent images (ECR storage is billed per GB)",
+      "selection": {
+        "tagStatus": "any",
+        "countType": "imageCountMoreThan",
+        "countNumber": 3
+      },
+      "action": { "type": "expire" }
+    }
+  ]
+}
