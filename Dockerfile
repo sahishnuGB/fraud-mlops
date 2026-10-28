@@ -2,11 +2,21 @@
 # Fraud detection API with the trained model baked in. One image, two targets:
 #   local:   dvc repro && docker build -t fraud-mlops . && docker run --rm -p 8000:8000 fraud-mlops
 #   Lambda:  .github/workflows/deploy.yaml builds it with the prod model and deploys it
-FROM python:3.12-slim
-
+#
 # Lambda Web Adapter: inside Lambda it turns invocations into HTTP requests to uvicorn.
 # Outside Lambda the extension is never started, so local `docker run` is unaffected.
-COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:1.1.0 /lambda-adapter /opt/extensions/lambda-adapter
+# --build-arg LAMBDA_ADAPTER=0 leaves it out; BuildKit then skips the adapter stage and never
+# contacts public.ecr.aws (CI does this: anonymous pulls from shared runner IPs get rate-limited).
+ARG LAMBDA_ADAPTER=1
+
+FROM public.ecr.aws/awsguru/aws-lambda-adapter:1.1.0 AS lambda-adapter
+FROM scratch AS extensions-1
+COPY --from=lambda-adapter /lambda-adapter /opt/extensions/lambda-adapter
+FROM scratch AS extensions-0
+FROM extensions-${LAMBDA_ADAPTER} AS extensions
+
+FROM python:3.12-slim
+COPY --from=extensions / /
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

@@ -21,6 +21,12 @@
       "Resource": "*"
     },
     {
+      "Sid": "EcrPublicLoginForAuthenticatedBaseImagePulls",
+      "Effect": "Allow",
+      "Action": ["ecr-public:GetAuthorizationToken", "sts:GetServiceBearerToken"],
+      "Resource": "*"
+    },
+    {
       "Sid": "EcrPushApiImage",
       "Effect": "Allow",
       "Action": [

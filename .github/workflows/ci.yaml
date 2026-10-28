@@ -59,7 +59,9 @@ jobs:
           dvc repro
 
       - name: Build image
-        run: docker build -t fraud-mlops:ci .
+        # The Lambda adapter is inert outside Lambda, and anonymous pulls of it from public.ecr.aws
+        # get rate-limited on shared runner IPs, so the smoke-test image leaves it out.
+        run: docker build --build-arg LAMBDA_ADAPTER=0 -t fraud-mlops:ci .
 
       - name: Smoke test
         run: |
