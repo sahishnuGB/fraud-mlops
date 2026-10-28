@@ -55,7 +55,10 @@ jobs:
 
       - name: Train a model offline (S3_BUCKET unset -> local_s3/ fallback)
         run: |
-          python -m src.generate_data --batch 2026-01 2026-04
+          # Generate whichever batches this branch's params.yaml asks for (a drift PR bumps `batch`).
+          read -r REF CUR < <(python -c "from src.utils import load_params as p; d = p(); print(d['reference_batch'], d['batch'])")
+          python -m src.generate_data --batch "$REF"
+          python -m src.generate_data --batch "$CUR"
           dvc repro
 
       - name: Build image

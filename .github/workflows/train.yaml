@@ -72,9 +72,17 @@ jobs:
       - name: DVC push
         run: dvc push
 
+      - name: Upload plots
+        uses: actions/upload-artifact@v4
+        with:
+          name: plots
+          path: reports/plots/
+          retention-days: 30
+
       - name: Build report
         env:
           BASE_REF: ${{ github.base_ref || 'main' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           git fetch --no-tags origin "$BASE_REF" || true
           {
@@ -99,16 +107,18 @@ jobs:
             cat reports/drift.md
             echo
             echo "### Plots"
-            echo '![PR curve](./reports/plots/pr_curve.png) ![Confusion matrix](./reports/plots/confusion_matrix.png)'
-            echo '![Drift](./reports/plots/drift_psi.png)'
+            # Linked, not embedded: embedding makes CML upload images to its own hosting
+            # service, which is a third-party dependency that has been unreliable.
+            echo "PR curve, confusion matrix and PSI chart: [\`plots\` artifact of this run]($RUN_URL#artifacts)"
           } > report.md
-          grep -v '^!\[' report.md >> "$GITHUB_STEP_SUMMARY"
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
 
       - uses: iterative/setup-cml@v2
         if: github.event_name == 'pull_request'
 
       - name: CML PR comment
         if: github.event_name == 'pull_request'
+        continue-on-error: true  # a comment hiccup must not hide the gate result below
         env:
           REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: cml comment update --watermark-title="fraud-train" report.md
