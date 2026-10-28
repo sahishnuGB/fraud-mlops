@@ -1,19 +1,19 @@
-### Data drift: `2026-04` vs reference `2026-01`
+### Data drift: `2026-06` vs reference `2026-01`
 
-No feature exceeded the PSI threshold. (threshold 0.2, max PSI 0.001)
+**Drift detected** in 3 feature(s): txn_count_24h, customer_age, avg_amount_30d (threshold 0.2, max PSI 0.308)
 
-Fraud rate: 2.017% (reference) -> 2.020% (current)
+Fraud rate: 2.017% (reference) -> 2.890% (current)
 
 | feature | PSI | status |
 |---|---:|---|
-| distance_from_home_km | 0.0011 | 🟢 ok |
-| hour | 0.0006 | 🟢 ok |
-| customer_age | 0.0005 | 🟢 ok |
-| txn_count_24h | 0.0004 | 🟢 ok |
-| account_age_days | 0.0003 | 🟢 ok |
-| merchant_category | 0.0003 | 🟢 ok |
-| avg_amount_30d | 0.0003 | 🟢 ok |
-| amount | 0.0001 | 🟢 ok |
-| device_change | 0.0000 | 🟢 ok |
-| card_present | 0.0000 | 🟢 ok |
-| is_foreign | 0.0000 | 🟢 ok |
+| txn_count_24h | 0.3081 | 🔴 drift |
+| customer_age | 0.2076 | 🔴 drift |
+| avg_amount_30d | 0.2031 | 🔴 drift |
+| card_present | 0.1442 | 🟡 warning |
+| account_age_days | 0.1204 | 🟡 warning |
+| amount | 0.1094 | 🟡 warning |
+| merchant_category | 0.1074 | 🟡 warning |
+| hour | 0.0651 | 🟢 ok |
+| device_change | 0.0310 | 🟢 ok |
+| is_foreign | 0.0280 | 🟢 ok |
+| distance_from_home_km | 0.0169 | 🟢 ok |

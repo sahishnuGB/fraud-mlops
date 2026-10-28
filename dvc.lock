@@ -13,13 +13,13 @@ stages:
       size: 4556
     params:
       params.yaml:
-        batch: 2026-04
+        batch: 2026-06
         reference_batch: 2026-01
     outs:
     - path: data/raw/current
       hash: md5
-      md5: feb364415c13aebc25fcae0fb029bfda.dir
-      size: 925399
+      md5: d62b6337cc3b6953f8bf7bff15631b5d.dir
+      size: 958491
       nfiles: 1
     - path: data/raw/reference
       hash: md5
@@ -31,8 +31,8 @@ stages:
     deps:
     - path: data/raw/current
       hash: md5
-      md5: feb364415c13aebc25fcae0fb029bfda.dir
-      size: 925399
+      md5: d62b6337cc3b6953f8bf7bff15631b5d.dir
+      size: 958491
       nfiles: 1
     - path: data/raw/reference
       hash: md5
@@ -57,20 +57,20 @@ stages:
     outs:
     - path: reports/validation.json
       hash: md5
-      md5: baa852d5e5e855eb73e72e6316ee14aa
-      size: 225
+      md5: 4d248376ed898763578500159d696218
+      size: 211
   split:
     cmd: python -m src.split
     deps:
     - path: data/raw/current
       hash: md5
-      md5: feb364415c13aebc25fcae0fb029bfda.dir
-      size: 925399
+      md5: d62b6337cc3b6953f8bf7bff15631b5d.dir
+      size: 958491
       nfiles: 1
     - path: reports/validation.json
       hash: md5
-      md5: baa852d5e5e855eb73e72e6316ee14aa
-      size: 225
+      md5: 4d248376ed898763578500159d696218
+      size: 211
     - path: src/split.py
       hash: md5
       md5: 2db51cec9064db6b2cc612707917f699
@@ -83,16 +83,16 @@ stages:
     outs:
     - path: data/split
       hash: md5
-      md5: 5f25b1f63820e9e93c960fd1ca5bf01e.dir
-      size: 1039670
+      md5: c3c3850635c8750807b51855e0a433cb.dir
+      size: 1065296
       nfiles: 2
   featurize:
     cmd: python -m src.featurize
     deps:
     - path: data/split
       hash: md5
-      md5: 5f25b1f63820e9e93c960fd1ca5bf01e.dir
-      size: 1039670
+      md5: c3c3850635c8750807b51855e0a433cb.dir
+      size: 1065296
       nfiles: 2
     - path: src/featurize.py
       hash: md5
@@ -105,16 +105,16 @@ stages:
     outs:
     - path: data/features
       hash: md5
-      md5: d4cb038cc9954311844e08872249c28f.dir
-      size: 1139290
+      md5: 557988ef26c5135fca9c088dff658390.dir
+      size: 1176068
       nfiles: 2
   train:
     cmd: python -m src.train
     deps:
     - path: data/features/train.parquet
       hash: md5
-      md5: 56a2b18222a2045b456f0738c3cca37b
-      size: 803685
+      md5: a2f1bf43a74bd8f3720e10435cd2ca55
+      size: 838028
     - path: src/train.py
       hash: md5
       md5: ea8a531f6a3561222c1f0d2195390fc7
@@ -143,19 +143,19 @@ stages:
     outs:
     - path: models/model.joblib
       hash: md5
-      md5: 1755bcc7c262758642048e09d6355c2e
-      size: 228565
+      md5: 5d2b6dd42fcae7172876de7f7da3bd8a
+      size: 263485
   evaluate:
     cmd: python -m src.evaluate
     deps:
     - path: data/features/test.parquet
       hash: md5
-      md5: 733c27cd3b7916359647fde0e766fa94
-      size: 335605
+      md5: 07ed5b0bfd654d1fe0091e63f6e75b1f
+      size: 338040
     - path: models/model.joblib
       hash: md5
-      md5: 1755bcc7c262758642048e09d6355c2e
-      size: 228565
+      md5: 5d2b6dd42fcae7172876de7f7da3bd8a
+      size: 263485
     - path: src/evaluate.py
       hash: md5
       md5: 9a88d59834f458112e3afb62ada42a27
@@ -168,23 +168,23 @@ stages:
     outs:
     - path: reports/metrics.json
       hash: md5
-      md5: 25c522a53157ca7a76ba559f9057f965
-      size: 398
+      md5: 774de4f662af91ff7d2a0a90006486a7
+      size: 380
     - path: reports/plots/confusion_matrix.png
       hash: md5
-      md5: 4095ec16aeddfbbad63e16bca5c26c4b
-      size: 12711
+      md5: 1649c4ff0591d7ee087a396939afcba8
+      size: 14189
     - path: reports/plots/pr_curve.png
       hash: md5
-      md5: 1f1fa27889825030dac8144834b1110d
-      size: 26373
+      md5: 223295b810f2010679a84843103b51f3
+      size: 28864
   drift_check:
     cmd: python -m src.drift_check
     deps:
     - path: data/raw/current
       hash: md5
-      md5: feb364415c13aebc25fcae0fb029bfda.dir
-      size: 925399
+      md5: d62b6337cc3b6953f8bf7bff15631b5d.dir
+      size: 958491
       nfiles: 1
     - path: data/raw/reference
       hash: md5
@@ -207,31 +207,31 @@ stages:
     outs:
     - path: reports/drift.json
       hash: md5
-      md5: 84dc657c833285f671a87816980ce92b
-      size: 611
+      md5: 74fb494c0ed29c6ffe91a70b36d050ce
+      size: 656
     - path: reports/drift.md
       hash: md5
-      md5: d3893b828f0861c77e35ed0a6c4290bd
-      size: 636
+      md5: 5fa9565f633f116d3d5ee575b4319417
+      size: 687
     - path: reports/plots/drift_psi.png
       hash: md5
-      md5: c0a6bd51f675edd152d581facbbd8987
-      size: 30912
+      md5: 873e22a124f4c171df3f7e8b46f7f09c
+      size: 36966
   promote:
     cmd: python -m src.promote
     deps:
     - path: data/features/test.parquet
       hash: md5
-      md5: 733c27cd3b7916359647fde0e766fa94
-      size: 335605
+      md5: 07ed5b0bfd654d1fe0091e63f6e75b1f
+      size: 338040
     - path: reports/drift.json
       hash: md5
-      md5: 84dc657c833285f671a87816980ce92b
-      size: 611
+      md5: 74fb494c0ed29c6ffe91a70b36d050ce
+      size: 656
     - path: reports/metrics.json
       hash: md5
-      md5: 25c522a53157ca7a76ba559f9057f965
-      size: 398
+      md5: 774de4f662af91ff7d2a0a90006486a7
+      size: 380
     - path: src/promote.py
       hash: md5
       md5: 9f08ec040adfd452d9b1122cf37c5910
@@ -243,5 +243,5 @@ stages:
     outs:
     - path: reports/promotion.json
       hash: md5
-      md5: d5c9a5f0eed4653dfd32613db07be7a7
-      size: 285
+      md5: 17324cb3b117a23a5028e94cf82aadb7
+      size: 325

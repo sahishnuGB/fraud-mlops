@@ -1,12 +1,12 @@
 {
-  "batch": "2026-04",
-  "candidate_pr_auc": 0.598557,
-  "delta_pr_auc": null,
-  "drift_detected": false,
-  "prod_batch": null,
-  "prod_compared_on": null,
-  "prod_pr_auc": null,
-  "prod_pr_auc_at_publish": null,
+  "batch": "2026-06",
+  "candidate_pr_auc": 0.740357,
+  "delta_pr_auc": 0.153487,
+  "drift_detected": true,
+  "prod_batch": "2026-04",
+  "prod_compared_on": "candidate test set",
+  "prod_pr_auc": 0.58687,
+  "prod_pr_auc_at_publish": 0.591237,
   "promote": true,
-  "reason": "no production model yet"
+  "reason": "candidate PR-AUC 0.7404 >= prod 0.5869 + 0.0"
 }
