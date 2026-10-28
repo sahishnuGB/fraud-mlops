@@ -182,9 +182,10 @@ aws ecr create-repository --repository-name fraud-mlops-api --region "$AWS_REGIO
 aws ecr put-lifecycle-policy --repository-name fraud-mlops-api \
   --lifecycle-policy-text file://infra/ecr-lifecycle.json
 
-# Log group with 7-day retention (Lambda's default keeps logs forever)
-aws logs create-log-group --log-group-name /aws/lambda/fraud-mlops-api
-aws logs put-retention-policy --log-group-name /aws/lambda/fraud-mlops-api --retention-in-days 7
+# Log group with 7-day retention (Lambda's default keeps logs forever).
+# MSYS_NO_PATHCONV=1 stops Git Bash rewriting "/aws/..." into a Windows path.
+MSYS_NO_PATHCONV=1 aws logs create-log-group --log-group-name /aws/lambda/fraud-mlops-api
+MSYS_NO_PATHCONV=1 aws logs put-retention-policy --log-group-name /aws/lambda/fraud-mlops-api --retention-in-days 7
 
 # Fill in the placeholders of the remaining policies
 fill() { sed -e "s|<ACCOUNT_ID>|$ACCOUNT_ID|g" -e "s|<REGION>|$AWS_REGION|g" \
@@ -248,7 +249,7 @@ The next deploy resets the cap to 2, so disable the `deploy` workflow too while 
 # Lambda deployment (step 8), if you did it. Deleting the function also removes its URL and policy.
 aws lambda delete-function --function-name fraud-mlops-api
 aws ecr delete-repository --repository-name fraud-mlops-api --force
-aws logs delete-log-group --log-group-name /aws/lambda/fraud-mlops-api
+MSYS_NO_PATHCONV=1 aws logs delete-log-group --log-group-name /aws/lambda/fraud-mlops-api
 aws iam delete-role-policy --role-name fraud-mlops-lambda --policy-name logs
 aws iam delete-role --role-name fraud-mlops-lambda
 aws iam delete-role-policy --role-name fraud-mlops-deploy --policy-name deploy

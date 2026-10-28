@@ -12,9 +12,9 @@ import os
 import sys
 
 from src import storage
-from src.promote import PROD_METRICS_KEY, PROD_MODEL_KEY, PROD_PREFIX
-from src.train import MODEL_PATH
-from src.utils import REPORTS_DIR, get_logger, read_json
+
+# Only lightweight imports: the deploy job installs just PyYAML and the AWS CLI.
+from src.utils import MODEL_PATH, PROD_METRICS_KEY, PROD_MODEL_KEY, PROD_PREFIX, REPORTS_DIR, get_logger, read_json
 
 log = get_logger("fetch_prod")
 

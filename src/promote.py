@@ -18,13 +18,19 @@ from sklearn.metrics import average_precision_score
 
 from src import storage
 from src.schema import TARGET
-from src.utils import FEATURES_DIR, REPORTS_DIR, get_logger, load_params, read_json, write_json
+from src.utils import (
+    FEATURES_DIR,
+    PROD_METRICS_KEY,
+    PROD_MODEL_KEY,
+    PROD_PREFIX,
+    REPORTS_DIR,
+    get_logger,
+    load_params,
+    read_json,
+    write_json,
+)
 
 log = get_logger("promote")
-
-PROD_PREFIX = "models/prod/"
-PROD_METRICS_KEY = PROD_PREFIX + "metrics.json"
-PROD_MODEL_KEY = PROD_PREFIX + "model.joblib"
 
 
 def fetch_prod_metrics() -> dict | None:

@@ -1,10 +1,36 @@
 import json
+import subprocess
+import sys
 
 import pytest
 
 from src import deploy_lambda, fetch_prod, storage
 from src.deploy_lambda import AwsError
-from src.utils import read_json, write_json
+from src.utils import ROOT, read_json, write_json
+
+# The deploy workflow installs only PyYAML (plus the AWS CLI), so its scripts must not
+# import the ML stack. This simulates that environment.
+BLOCK_HEAVY_IMPORTS = """
+import importlib.abc, sys
+HEAVY = {"pandas", "numpy", "sklearn", "joblib", "imblearn", "scipy", "matplotlib", "pyarrow", "fastapi"}
+class Block(importlib.abc.MetaPathFinder):
+    def find_spec(self, name, path, target=None):
+        if name.split(".")[0] in HEAVY:
+            raise ModuleNotFoundError(name + " is not installed in the deploy job")
+sys.meta_path.insert(0, Block())
+"""
+
+
+@pytest.mark.parametrize("module", ["src.fetch_prod", "src.deploy_lambda"])
+def test_deploy_scripts_need_only_stdlib_and_pyyaml(module):
+    proc = subprocess.run(
+        [sys.executable, "-c", f"{BLOCK_HEAVY_IMPORTS}\nimport {module}"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+
 
 URL = "https://abc123.lambda-url.us-east-1.on.aws/"
 

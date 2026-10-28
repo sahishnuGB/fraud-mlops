@@ -18,9 +18,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from src import storage
-from src.promote import PROD_PREFIX, fetch_prod_metrics
-from src.train import MODEL_PATH
-from src.utils import REPORTS_DIR, ROOT, get_logger, read_json, write_json
+from src.promote import fetch_prod_metrics
+from src.utils import MODEL_PATH, PROD_PREFIX, REPORTS_DIR, ROOT, get_logger, read_json, write_json
 
 log = get_logger("publish")
 

@@ -19,11 +19,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 from src.schema import TARGET
-from src.utils import FEATURES_DIR, MODELS_DIR, get_logger, load_params
+from src.utils import FEATURES_DIR, MODEL_PATH, MODELS_DIR, get_logger, load_params
 
 log = get_logger("train")
 
-MODEL_PATH = MODELS_DIR / "model.joblib"
 SAMPLING_CHOICES = ("none", "undersample", "smote")
 MODEL_CHOICES = ("hgb", "logreg")
 

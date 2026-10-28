@@ -21,8 +21,7 @@ from sklearn.metrics import (  # noqa: E402
 )
 
 from src.schema import TARGET  # noqa: E402
-from src.train import MODEL_PATH  # noqa: E402
-from src.utils import FEATURES_DIR, PLOTS_DIR, REPORTS_DIR, get_logger, load_params, write_json  # noqa: E402
+from src.utils import FEATURES_DIR, MODEL_PATH, PLOTS_DIR, REPORTS_DIR, get_logger, load_params, write_json  # noqa: E402
 
 log = get_logger("evaluate")
 

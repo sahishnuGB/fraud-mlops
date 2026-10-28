@@ -21,6 +21,12 @@ FEATURES_DIR = DATA / "features"
 MODELS_DIR = ROOT / "models"
 REPORTS_DIR = ROOT / "reports"
 PLOTS_DIR = REPORTS_DIR / "plots"
+MODEL_PATH = MODELS_DIR / "model.joblib"
+
+# Model registry in object storage
+PROD_PREFIX = "models/prod/"
+PROD_MODEL_KEY = PROD_PREFIX + "model.joblib"
+PROD_METRICS_KEY = PROD_PREFIX + "metrics.json"
 
 BATCH_FILE = "transactions.parquet"
 BATCH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
