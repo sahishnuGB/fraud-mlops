@@ -1,7 +1,7 @@
 {
   "current": {
     "errors": [],
-    "fraud_rate": 0.0202,
+    "fraud_rate": 0.0289,
     "passed": true,
     "rows": 30000
   },

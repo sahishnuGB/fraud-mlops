@@ -1,5 +1,5 @@
 # Month to train on: s3://$S3_BUCKET/raw/batch=<batch>/ (bumped monthly by scheduled.yaml)
-batch: "2026-04"
+batch: "2026-06"
 # Baseline month for drift monitoring (PSI)
 reference_batch: "2026-01"
 seed: 42
